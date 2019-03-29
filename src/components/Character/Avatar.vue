@@ -1,5 +1,9 @@
 <template lang="html">
 	<div class="">
+		<v-layout justify-center pt-5>
+			<v-text-field v-model="name" label="名前を入力してください" class="name-area"></v-text-field>
+		</v-layout>
+
 		<v-layout justify-center>
 			<avataaar avatar-style="Transparent"
 			:accessoriesType="accessoriesType"
@@ -67,6 +71,7 @@ export default {
 
 	data () {
 		return {
+			name: '匿名',
 			accessoriesType: 'Blank',
 			accessoriesTypeOptions: [ 'Blank', 'Kurt', 'Prescription01', 'Prescription02', 'Round', 'Sunglasses', 'Wayfarers' ],
 			clotheType: 'BlazerShirt',
@@ -101,6 +106,7 @@ export default {
 	},
 
 	mounted () {
+		this.name = this.me.name ? this.me.name : this.name
 		this.accessoriesType = this.me.accessory ? this.me.accessory : this.accessoriesType
 		this.clotheType = this.me.cloth ? this.me.cloth : this.clotheType
 		this.eyebrowType = this.me.eyebrow ? this.me.eyebrow : this.eyebrowType
@@ -120,6 +126,7 @@ export default {
 
 		finish () {
 			this.set_avatar({
+				name: this.name,
 				accessory: this.accessoriesType,
 				cloth: this.clotheType,
 				eyebrow: this.eyebrowType,
@@ -138,4 +145,7 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.name-area {
+	max-width: 300px;
+}
 </style>

@@ -1,6 +1,8 @@
 export default {
 	me: {
-		speaking: false,
+		is_me: true,
+		name: '',
+		mute: false,
 		accessory: null,
 		cloth: null,
 		eyebrow: null,

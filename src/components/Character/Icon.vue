@@ -3,7 +3,8 @@
 		<div>
 			<avataaar avatar-style="Transparent" class="icon" ref="icon"
 			:class="{
-				toggling: user.speaking
+				toggling: speaking,
+				mute: user.mute
 				}"
 				:accessoriesType="user.accessory"
 				:clotheType="user.cloth"
@@ -18,7 +19,7 @@
 				>
 			</avataaar>
 
-			<div class="user-name mt-2">あなた</div>
+			<div class="user-name mt-2">{{ user.name ? user.name : (user.is_me ? 'あなた' : '匿名ユーザー') }}</div>
 		</div>
 	</v-layout>
 </template>
@@ -34,7 +35,8 @@ export default {
 	},
 
 	props: [
-		'user'
+		'user',
+		'speaking',
 	],
 }
 </script>
@@ -46,6 +48,9 @@ export default {
 .icon.toggling {
 	animation: Toggle .8s;
 	animation-iteration-count: infinite;
+}
+.icon.mute {
+	opacity: 0.5;
 }
 @keyframes Toggle {
 	0% {

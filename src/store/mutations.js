@@ -1,5 +1,6 @@
 export default {
 	set_avatar (state, avatar) {
+		state.me.name = avatar.name
 		state.me.accessory = avatar.accessory
 		state.me.cloth = avatar.cloth
 		state.me.eyebrow = avatar.eyebrow
@@ -12,11 +13,11 @@ export default {
 		state.me.top = avatar.top
 	},
 
-	set_speaking (state) {
-		state.speaking = true
+	set_mute (state) {
+		state.me.mute = true
 	},
 
-	dismiss_speaking (state) {
-		state.speaking = false
+	dismiss_mute (state) {
+		state.me.mute = false
 	}
 }

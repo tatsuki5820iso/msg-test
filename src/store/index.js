@@ -23,7 +23,19 @@ export default new Vuex.Store({
   				removeItem: key => Cookies.remove(key)
   			},
   			reducer: state => ({
-				me: state.me
+				me: {
+					name: state.me.name,
+					accessory: state.me.accessory,
+					cloth: state.me.cloth,
+					eyebrow: state.me.eyebrow,
+					eye: state.me.eye,
+					face_hair_type: state.me.face_hair_type,
+					face_hair_color: state.me.face_hair_color,
+					hair_color: state.me.hair_color,
+					mouth: state.me.mouth,
+					skin: state.me.skin,
+					top: state.me.top,
+				}
   			})
   		}),
   	]

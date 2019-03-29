@@ -5,7 +5,6 @@
 				<avatar @finish="bottomNav = 'video'"></avatar>
 			</div>
 			<div v-else-if="bottomNav == 'video'">
-				<icon-lists></icon-lists>
 				<top-video />
 			</div>
 			<v-layout justify-center style="height: 100vh;" v-else>
@@ -37,14 +36,12 @@
 import TopVideo from './components/Video-auto-copy'
 import Character from './components/Character/Heart'
 import Avatar from './components/Character/Avatar'
-import IconLists from './components/IconLists'
 
 export default {
 	components: {
 		TopVideo,
 		Character,
 		Avatar,
-		IconLists,
 	},
 
 	data () {
