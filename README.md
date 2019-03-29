@@ -37,7 +37,7 @@ ngrok http 8080 -host-header="localhost:8080"
 ## 参考
 
 ### WebRTC ハンズオン
-https://qiita.com/yusuke84/items/43a20e3b6c78ae9a8f6c
+https://qiita.com/yusuke84/items/43a20e3b6c78ae9a8f6c(https://qiita.com/yusuke84/items/43a20e3b6c78ae9a8f6c)
 
 ### OpenTok（通話アプリ）
-https://tokbox.com/account/#/
+https://tokbox.com/account/#/(https://tokbox.com/account/#/)

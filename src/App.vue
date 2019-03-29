@@ -1,10 +1,12 @@
 <template>
 	<v-app>
-		<v-content style="margin-bottom: 60px;">
-			<top-video />
-
+		<v-content style="margin-bottom: 100px;">
 			<div v-if="bottomNav == 'character'">
-				<character></character>
+				<avatar @finish="bottomNav = 'video'"></avatar>
+			</div>
+			<div v-else-if="bottomNav == 'video'">
+				<icon-lists></icon-lists>
+				<top-video />
 			</div>
 			<v-layout justify-center style="height: 100vh;" v-else>
 				{{ bottomNav }}
@@ -18,9 +20,9 @@
 				<v-icon>history</v-icon>
 			</v-btn>
 
-			<v-btn color="#ffb948" flat value="favorites">
-				<span>Favorites</span>
-				<v-icon>favorite</v-icon>
+			<v-btn color="#ffb948" flat value="video">
+				<span>Video</span>
+				<v-icon>ondemand_video</v-icon>
 			</v-btn>
 
 			<v-btn color="#ffb948" flat value="nearby">
@@ -32,13 +34,17 @@
 </template>
 
 <script>
-import TopVideo from './components/Video'
+import TopVideo from './components/Video-auto-copy'
 import Character from './components/Character/Heart'
+import Avatar from './components/Character/Avatar'
+import IconLists from './components/IconLists'
 
 export default {
 	components: {
 		TopVideo,
 		Character,
+		Avatar,
+		IconLists,
 	},
 
 	data () {

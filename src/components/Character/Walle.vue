@@ -310,7 +310,7 @@ export default {
 				this.startArms.progress(1 - (e.clientX / walleCoords)).pause();
 
 			}
-		},
+		}
 	}
 }
 </script>

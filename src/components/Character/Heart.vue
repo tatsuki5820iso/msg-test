@@ -1,28 +1,39 @@
 <template lang="html">
-	<v-layout justify-center>
-		<div class="wrapper" @mousemove="coordinates" ref="wrapper">
-			<img src="/img/heart.svg" class="heart-icon" ref="heart"
-			:class="{
-				isFliped: flip
-			}"
-			:style="{
-				transform:`translate3d(${x}px, ${y}px, 0)`,
-				}" />
-		</div>
-	</v-layout>
+	<div class="">
+		<v-layout justify-center>
+			<div class="wrapper" @mousemove="coordinates" ref="wrapper" v-touch="{
+				left: () => swipe('left'),
+				right: () => swipe('right')
+			}">
+				<img src="/img/heart.svg" class="heart-icon" ref="heart"
+				:class="{
+					isFliped: flip
+				}"
+				:style="{
+					transform:`translate3d(${x}px, ${y}px, 0)`,
+					}" />
+			</div>
+		</v-layout>
+	</div>
 </template>
 
 <script>
 // import 'svg-sprite-loader'
 import { TimelineMax, Sine } from 'gsap'
+import Avatar from './Avatar'
 
 export default {
+	components: {
+		Avatar
+	},
+
 	data () {
 		return {
 			x: 0,
 			y: 0,
 			flip: false,
 			start: null,
+			slided: 0,
 		}
 	},
 
@@ -56,6 +67,10 @@ export default {
 			}
 
 			this.start.progress(progress).pause();
+		},
+
+		swipe (dir) {
+			console.log(dir)
 		}
 	}
 }

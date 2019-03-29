@@ -9,9 +9,9 @@
 		</v-layout>
 
 		<div class="px-5">
-			<!-- <div class="create-break mb-5" v-html="textForSend"></div> -->
+			<div class="create-break mb-5" v-html="textForSend"></div>
 
-			<!-- <v-textarea label="textToReceiveSdp" outline v-model="textToReceiveSdp"></v-textarea> -->
+			<v-textarea label="textToReceiveSdp" outline v-model="textToReceiveSdp"></v-textarea>
 		</div>
 
 	</div>
@@ -136,13 +136,11 @@ export default {
 						if(vm.negotiationneededCounter === 0){
 							peer.createOffer().then(offer => {
 								console.log('createOffer() succsess in promise');
-								peer.setLocalDescription(offer);
-								console.log('setLocalDescription() succsess in promise');
-
-								console.log({
-									peer: peer
-								})
-								vm.sendSdp(peer.localDescription);
+								peer.setLocalDescription(offer)
+								.then(() => {
+									console.log('setLocalDescription() succsess in promise');
+									vm.sendSdp(peer.localDescription);
+								});
 								vm.negotiationneededCounter++;
 							});
 						}
@@ -183,11 +181,11 @@ export default {
 			console.log('---sending sdp ---');
 			if(sessionDescription) {
 				this.textForSend = sessionDescription.sdp
-
-				const message = JSON.stringify(sessionDescription);
-				console.log('sending SDP=' + message);
-				this.ws.send(message);
 			}
+
+			const message = JSON.stringify(sessionDescription);
+			console.log('sending SDP=' + message);
+			this.ws.send(message);
 		},
 
 		connect() {
@@ -210,9 +208,11 @@ export default {
 				this.peerConnection.createAnswer()
 				.then(answer => {
 					console.log('createAnswer() succsess in promise');
-					this.peerConnection.setLocalDescription(answer);
-					console.log('setLocalDescription() succsess in promise');
-					this.sendSdp(this.peerConnection.localDescription);
+					this.peerConnection.setLocalDescription(answer)
+					.then(() => {
+						console.log('setLocalDescription() succsess in promise');
+						this.sendSdp(this.peerConnection.localDescription);
+					})
 				})
 			} catch(err){
 				console.error(err);
@@ -259,27 +259,27 @@ export default {
 				console.error('peerConnection NOT exist!');
 				return;
 			}
-			try {
+			try{
 				this.peerConnection.setRemoteDescription(sessionDescription);
 				console.log('setRemoteDescription(answer) succsess in promise');
-			} catch (err) {
+			} catch(err){
 				console.error('setRemoteDescription(answer) ERROR: ', err);
 			}
 		},
 
 		hangUp (){
 			if (this.peerConnection) {
-				if(this.peerConnection.iceConnectionState !== 'closed') {
+				if(this.peerConnection.iceConnectionState !== 'closed'){
 					this.peerConnection.close();
 					this.peerConnection = null;
 					this.negotiationneededCounter = 0;
 
+
 					const message = JSON.stringify({ type: 'close' });
 					console.log('sending close message');
 					this.ws.send(message);
-					this.cleanupVideoElement(remoteVideo);
+					this.cleanupVideoElement();
 					this.textForSend = '';
-					this.textToReceiveSdp = '';
 					return;
 				}
 			}
@@ -292,7 +292,6 @@ export default {
 			element.srcObject = null;
 		},
 
-		// ICE candaidate受信時にセットする
 		addIceCandidate(candidate) {
 			if (this.peerConnection) {
 				this.peerConnection.addIceCandidate(candidate);
