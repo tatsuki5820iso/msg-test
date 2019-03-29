@@ -61,7 +61,7 @@ export default {
 		})
 
 		// const wsUrl = 'ws://localhost:3001/';
-		const wsUrl = 'wss://floating-ocean-47278.herokuapp.com/';
+		const wsUrl = 'wss://21350075.ngrok.io';
 		this.ws = new WebSocket(wsUrl);
 		this.ws.onopen = (evt) => {
 			console.log('ws open()');
