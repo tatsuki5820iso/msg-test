@@ -12,7 +12,6 @@ io.sockets.on('connection', function(socket) {
 	socket.on('open', function(option) {
 		connectGroup = option.connectGroup
 		let clientsCount = socket.client.conn.server.clientsCount
-		console.log(clientsCount)
 		if(clientsCount < 4) { // 最大人数を定義
 			socket.join(option.connectGroup);
 			socket.emit('open', {
@@ -34,6 +33,7 @@ io.sockets.on('connection', function(socket) {
 		// 特定のユーザに送信
 		var target = message.sendto || message.params.sendto;
 		if (target) {
+			console.log(target)
 			socket.to(target).emit('message', message);
 			return;
 		}

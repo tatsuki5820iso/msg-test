@@ -81,6 +81,9 @@ export default {
 			vm.$socket.emit('message', { type: 'allCall', params: { fromUserId: vm.socketUserId } })
 		});
 		this.sockets.subscribe('message', (data) => {
+			console.log('hoge', data)
+			alert(data.type)
+
 			switch (data.type) {
 				case 'allCall': {
 					vm.$socket.emit('message', { type: 'callAnswer', params: { sendTo: data.params.fromUserId, fromUserId: this.socketUserId, user: vm.me } })
@@ -131,7 +134,6 @@ export default {
 			audio: true
 		})
 		.then(stream => {
-			// this.playVideo(stream)
 			this.localStream = stream
 
 			this.$socket.emit('open', {
@@ -253,21 +255,7 @@ export default {
 		},
 
 		sendSdp(sessionDescription, toUserId) {
-			if(sessionDescription.type == 'offer') {
-				alert('offer')
-			} else if (sessionDescription.type == 'answer') {
-				alert('answer')
-			}
 			this.$socket.emit('message', { type: sessionDescription.type, params: { sdp: sessionDescription, fromUserId: this.socketUserId, sendto: toUserId } });
-		},
-
-		connect() {
-			if (! this.peerConnection) {
-				this.peerConnection = this.prepareNewConnection(true);
-			}
-			else {
-				console.warn('peer already exist.');
-			}
 		},
 
 		makeAnswer(toUserId) {
