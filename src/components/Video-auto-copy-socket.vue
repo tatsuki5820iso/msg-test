@@ -59,8 +59,6 @@ export default {
 	},
 
 	mounted () {
-		alert('hoge')
-
 		let vm = this
 
 		if(!navigator.mediaDevices) {
@@ -83,8 +81,6 @@ export default {
 			vm.$socket.emit('message', { type: 'allCall', params: { fromUserId: vm.socketUserId } })
 		});
 		this.sockets.subscribe('message', (data) => {
-			alert(data.type)
-
 			switch (data.type) {
 				case 'allCall': {
 					vm.$socket.emit('message', { type: 'callAnswer', params: { sendTo: data.params.fromUserId, fromUserId: this.socketUserId, user: vm.me } })
