@@ -21,13 +21,10 @@ export default {
 		})
 	},
 
-	add_user ({ state, commit }, user) {
+	add_user ({ state, commit }, { user, socketId }) {
 		return new Promise((resolve, reject) => {
-			let index = state.users.findIndex(function(ele) {
-				return ele.name == user.name
-			})
-			if(index === -1) {
-				commit('add_user', user)
+			if(!state.users[socketId]) {
+				commit('add_user', { user, socketId })
 			}
 			resolve()
 		})

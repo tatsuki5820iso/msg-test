@@ -11,22 +11,28 @@ io.sockets.on('connection', function(socket) {
 	// 接続時の処理
 	socket.on('open', function(option) {
 		connectGroup = option.connectGroup
-		socket.join(option.connectGroup);
-		socket.emit('open', {
-			messageTypes: messageTypes,
-			userId: socket.id
-		});
+		let clientsCount = socket.client.conn.server.clientsCount
+		console.log(clientsCount)
+		if(clientsCount < 4) { // 最大人数を定義
+			socket.join(option.connectGroup);
+			socket.emit('open', {
+				userId: socket.id
+			});
+		} else {
+			socket.emit('message', { type: 'socketFailed' })
+		}
 	});
 
 	// 切断時の処理
 	socket.on('disconnect', function() {
-		console.log("disconnect");
+		let clientsCount = socket.client.conn.server.clientsCount
+		socket.emit('message', { type: 'disconnected' })
 	});
 
 	// シグナリング処理
 	socket.on('message', function(message) {
 		// 特定のユーザに送信
-		var target = message.sendto || message.param.sendto;
+		var target = message.sendto || message.params.sendto;
 		if (target) {
 			socket.to(target).emit('message', message);
 			return;

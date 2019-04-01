@@ -1,7 +1,6 @@
 export default {
-	add_user (state, user) {
-		user.id = state.users.length + 1
+	add_user (state, { user, socketId }) {
 		user.is_me = false
-		state.users.push(user)
+		state.users[socketId] = user
 	}
 }

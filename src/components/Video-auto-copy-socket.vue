@@ -8,21 +8,10 @@
 			<div class="mx-2 wrapper-card">
 				<audio-test :stream="localStream" :user="me" v-if="localStream"></audio-test>
 			</div>
-			<div class="wrapper-card" v-if="streams.length" v-for="stream in streams">
-				<audio-test :stream="stream" :user="users[0]" v-if="localStream && users.length"></audio-test>
+			<div class="mx-2 wrapper-card" v-for="stream_arr in streams">
+				<audio-test :stream="stream_arr.stream" :user="users[stream_arr.socketId]" v-if="localStream && users[stream_arr.socketId]"></audio-test>
 			</div>
 		</v-layout>
-
-		<v-layout space-between>
-			<v-btn color="#ffb948" outline @click="connect()">Connect</v-btn>
-			<v-btn color="#ffb948" outline @click="onSdpText()">Receive</v-btn>
-		</v-layout>
-
-		<div class="px-5">
-			<div class="create-break mb-5" v-html="textForSend"></div>
-
-			<v-textarea label="textToReceiveSdp" outline v-model="textToReceiveSdp"></v-textarea>
-		</div>
 
 	</div>
 </template>
@@ -36,15 +25,20 @@ export default {
 		AudioTest
 	},
 
+	props: [
+		'connectGroup'
+	],
+
 	data () {
 		return {
 			localStream: null,
-			peerConnection: null,
+			peerConnections: [],
 			negotiationneededCounter: 0,
 			textForSend: '',
 			textToReceiveSdp: '',
 			ws: null,
-			streams: []
+			streams: [],
+			socketUserId: null,
 		}
 	},
 
@@ -59,10 +53,13 @@ export default {
 
 		me_mute () {
 			return this.me.mute
-		}
+		},
+
 	},
 
 	mounted () {
+		let vm = this
+
 		if(!navigator.mediaDevices) {
 			navigator.mediaDevices = {}
 			navigator.mediaDevices.getUserMedia = function(constraints) {
@@ -78,6 +75,57 @@ export default {
 			}
 		}
 
+		this.sockets.subscribe('open', (data) => {
+			vm.socketUserId = data.userId
+			vm.$socket.emit('message', { type: 'allCall', params: { fromUserId: vm.socketUserId } })
+		});
+		this.sockets.subscribe('message', (data) => {
+			switch (data.type) {
+				case 'allCall': {
+					vm.$socket.emit('message', { type: 'callAnswer', params: { sendTo: data.params.fromUserId, fromUserId: this.socketUserId, user: vm.me } })
+					break;
+				}
+				case 'callAnswer': {
+					let fromUserId = data.params.fromUserId
+					if(!vm.getConnection(fromUserId)) {
+						let peerConnection = vm.prepareNewConnection(true, fromUserId)
+						vm.setConnection(peerConnection, fromUserId)
+					}
+					break;
+				}
+				case 'offer': {
+					this.setOffer(data.params.sdp, data.params.fromUserId)
+					break;
+				}
+				case 'answer': {
+					this.setAnswer(data.params.sdp, data.params.fromUserId)
+					break;
+				}
+				case 'candidate': {
+					const candidate = new RTCIceCandidate(data.params.ice);
+					this.addIceCandidate(candidate, data.params.fromUserId);
+					break;
+				}
+				case 'user': {
+					this.set_user(data.params.user, data.params.fromUserId)
+					break;
+				}
+				case 'close': {
+					console.log('close')
+					this.hangUp();
+					break;
+				}
+				case 'socketFailed': {
+					console.error('room capacity overwhelmed!')
+					break;
+				}
+				default: {
+					console.error('Invalid Message')
+					break;
+				}
+			}
+		});
+
 		navigator.mediaDevices.getUserMedia({
 			video: true,
 			audio: true
@@ -85,53 +133,16 @@ export default {
 		.then(stream => {
 			// this.playVideo(stream)
 			this.localStream = stream
+
+			this.$socket.emit('open', {
+				option: { connectionGroup: this.connectionGroup }
+			})
 		})
 		.catch(error => {
 			alert('接続できませんでした')
 			console.error('getUserMedia() error ->', error)
 			return;
 		})
-
-		const wsUrl = 'ws://localhost:3001/';
-		this.ws = new WebSocket(wsUrl);
-		this.ws.onopen = (evt) => {
-			console.log('ws open()');
-		};
-		this.ws.onerror = (err) => {
-			console.error('ws onerror() ERR:', err);
-		};
-		this.ws.onmessage = (evt) => {
-			const message = JSON.parse(evt.data);
-			switch(message.type){
-				case 'offer': {
-					this.textToReceiveSdp = message.sdp;
-					this.setOffer(message);
-					break;
-				}
-				case 'answer': {
-					this.textToReceiveSdp = message.sdp;
-					this.setAnswer(message);
-					break;
-				}
-				case 'candidate': {
-					const candidate = new RTCIceCandidate(message.ice);
-					this.addIceCandidate(candidate);
-					break;
-				}
-				case 'close': {
-					this.hangUp();
-					break;
-				}
-				case 'user': {
-					this.set_user(message.user)
-					break;
-				}
-				default: {
-					console.log("Invalid message");
-					break;
-				}
-			}
-		};
 	},
 
 	watch: {
@@ -145,31 +156,36 @@ export default {
 			'add_user'
 		]),
 
-		playVideo (stream) {
+		playVideo (stream, toUserId) {
 			if(this.streams.findIndex(function(ele) {
-				return ele == stream
+				return ele.socketId == toUserId
 			}) === -1) {
-				this.streams.push(stream)
+				this.streams.push({
+					socketId: toUserId,
+					stream: stream
+				})
 			}
 			this.$refs.video.srcObject = stream
+			console.log({
+				streams: this.streams
+			})
 		},
 
-		prepareNewConnection (isOffer) {
+		prepareNewConnection (isOffer, toUserId) {
 			let vm = this
 			const pc_config = {"iceServers":[ {"urls":"stun:stun.webrtc.ecl.ntt.com:3478"} ]};
 			const peer = new RTCPeerConnection(pc_config);
 
 			// リモートのMediaStreamTrackを受信した時
 			peer.ontrack = evt => {
-				console.log(evt)
-				this.playVideo(evt.streams[0]);
-				this.send_user()
+				this.playVideo(evt.streams[0], toUserId);
+				this.send_user(toUserId)
 			};
 
 			// ICE Candidateを収集したときのイベント
 			peer.onicecandidate = evt => {
 				if (evt.candidate) {
-					this.sendIceCandidate(evt.candidate);
+					this.sendIceCandidate(evt.candidate, toUserId);
 				} else {
 					console.log('empty ice event');
 				}
@@ -178,12 +194,12 @@ export default {
 			// Offer側でネゴシエーションが必要になったときの処理
 			peer.onnegotiationneeded = async () => {
 				try {
-					if(isOffer){
-						if(vm.negotiationneededCounter === 0){
+					if(isOffer) {
+						if(vm.negotiationneededCounter === 0) {
 							peer.createOffer().then(offer => {
 								peer.setLocalDescription(offer)
 								.then(() => {
-									vm.sendSdp(peer.localDescription);
+									vm.sendSdp(peer.localDescription, toUserId);
 								});
 								vm.negotiationneededCounter++;
 							});
@@ -198,15 +214,19 @@ export default {
 			peer.oniceconnectionstatechange = function() {
 				console.log('ICE connection Status has changed to ' + peer.iceConnectionState);
 				switch (peer.iceConnectionState) {
-					case 'closed':
+					case 'closed': {
 						break;
-					case 'failed':
-						if (this.peerConnection) {
-							hangUp();
+					}
+					case 'failed': {
+						if (vm.getConnection(toUserId)) {
+							vm.hangUp(toUserId);
 						}
 						break;
-					case 'disconnected':
+					}
+					case 'disconnected': {
+						vm.hangUp(toUserId)
 						break;
+					}
 				}
 			};
 
@@ -220,9 +240,24 @@ export default {
 			return peer;
 		},
 
-		sendSdp(sessionDescription) {
-			const message = JSON.stringify(sessionDescription);
-			this.ws.send(message);
+		getConnection(fromUserId) {
+			return this.peerConnections[fromUserId]
+		},
+
+		setConnection(peerConnection, fromUserId) {
+			if(!this.peerConnections[fromUserId]) {
+				this.peerConnections[fromUserId] = peerConnection
+			}
+		},
+
+		dismissConnection(fromUserId) {
+			if(this.peerConnections[fromUserId]) {
+				this.peerConnections.splice(fromUserId, 1)
+			}
+		},
+
+		sendSdp(sessionDescription, toUserId) {
+			this.$socket.emit('message', { type: sessionDescription.type, params: { sdp: sessionDescription, fromUserId: this.socketUserId, sendto: toUserId } });
 		},
 
 		connect() {
@@ -234,17 +269,18 @@ export default {
 			}
 		},
 
-		makeAnswer() {
-			if (! this.peerConnection) {
+		makeAnswer(toUserId) {
+			let peerConnection = this.getConnection(toUserId)
+			if (! peerConnection) {
 				console.error('peerConnection NOT exist!');
 				return;
 			}
 			try{
-				this.peerConnection.createAnswer()
+				peerConnection.createAnswer()
 				.then(answer => {
-					this.peerConnection.setLocalDescription(answer)
+					peerConnection.setLocalDescription(answer)
 					.then(() => {
-						this.sendSdp(this.peerConnection.localDescription);
+						this.sendSdp(peerConnection.localDescription, toUserId);
 					})
 				})
 			} catch(err){
@@ -271,59 +307,60 @@ export default {
 			}
 		},
 
-		setOffer(sessionDescription) {
-			if (this.peerConnection) {
+		setOffer(sessionDescription, fromUserId) {
+			let peerConnection = this.getConnection(fromUserId)
+			if (peerConnection) {
 				console.error('peerConnection alreay exist!');
+			} else {
+				peerConnection = this.prepareNewConnection(false, fromUserId)
+				this.setConnection(peerConnection, fromUserId)
 			}
-			this.peerConnection = this.prepareNewConnection(false);
 
 			try {
-				this.peerConnection.setRemoteDescription(sessionDescription);
-				this.makeAnswer();
+				peerConnection.setRemoteDescription(sessionDescription);
+				this.makeAnswer(fromUserId);
 			} catch(err){
 				console.error('setRemoteDescription(offer) ERROR: ', err);
 			}
 		},
 
-		setAnswer(sessionDescription) {
-			if (! this.peerConnection) {
+		setAnswer(sessionDescription, fromUserId) {
+			let peerConnection = this.getConnection(fromUserId)
+			if (!peerConnection) {
 				console.error('peerConnection NOT exist!');
 				return;
 			}
-			try{
-				this.peerConnection.setRemoteDescription(sessionDescription);
-			} catch(err){
+			try {
+				peerConnection.setRemoteDescription(sessionDescription);
+			} catch(err) {
 				console.error('setRemoteDescription(answer) ERROR: ', err);
 			}
 		},
 
-		hangUp (){
-			if (this.peerConnection) {
-				if(this.peerConnection.iceConnectionState !== 'closed'){
-					this.peerConnection.close();
-					this.peerConnection = null;
-					this.negotiationneededCounter = 0;
-
-
-					const message = JSON.stringify({ type: 'close' });
-					this.ws.send(message);
-					this.cleanupVideoElement();
-					this.textForSend = '';
+		hangUp (toUserId) {
+			let peerConnection = this.getConnection(toUserId)
+			if (peerConnection) {
+				if(peerConnection.iceConnectionState !== 'closed'){
+					peerConnection.close();
+					this.dismissConnection(toUserId)
+					this.$socket.emit('message', { type: 'close', params: { fromUserId: this.socketUserId, sendto: toUserId }})
+					this.cleanupAudioElement(toUserId);
 					return;
 				}
 			}
 			console.log('peerConnection is closed.');
 		},
 
-		cleanupVideoElement () {
+		cleanupAudioElement (toUserId) {
 			let element = this.$refs.video
 			element.pause();
 			element.srcObject = null;
 		},
 
-		addIceCandidate(candidate) {
-			if (this.peerConnection) {
-				this.peerConnection.addIceCandidate(candidate);
+		addIceCandidate(candidate, fromUserId) {
+			let peerConnection = this.getConnection(fromUserId)
+			if (peerConnection) {
+				peerConnection.addIceCandidate(candidate);
 			}
 			else {
 				console.error('PeerConnection not exist!');
@@ -331,22 +368,30 @@ export default {
 			}
 		},
 
-		sendIceCandidate(candidate) {
-			const message = JSON.stringify({ type: 'candidate', ice: candidate });
-			this.ws.send(message);
+		sendIceCandidate(candidate, toUserId) {
+			this.$socket.emit('message', { type: 'candidate', params: { ice: candidate, sendto: toUserId, fromUserId: this.socketUserId } })
 		},
 
 		mute_me () {
 			this.localStream.getAudioTracks()[0].enabled = !this.me_mute;
 		},
 
-		send_user () {
-			let message = JSON.stringify({ type: 'user', user: this.me });
-			this.ws.send(message)
+		send_user (toUserId) {
+			this.$socket.emit('message', {
+				type: 'user',
+				params: {
+					user: this.me,
+					fromUserId: this.socketUserId,
+					sendto: toUserId,
+				}
+			})
 		},
 
-		set_user (user) {
-			this.add_user(user)
+		set_user (user, fromUserId) {
+			this.add_user({
+				user: user,
+				socketId: fromUserId
+			})
 			.then(() => {
 				console.log(this.$store.state.chat.users)
 			})
