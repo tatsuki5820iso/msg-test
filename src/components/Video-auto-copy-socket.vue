@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="text-center">
-			<video ref="video" autoplay class="test-video" playsinline></video>
+			<!-- <video ref="video" autoplay class="test-video" playsinline></video> -->
 		</div>
 
 		<v-layout justify-center wrap pb-5>
@@ -128,7 +128,6 @@ export default {
 		});
 
 		navigator.mediaDevices.getUserMedia({
-			video: true,
 			audio: true
 		})
 		.then(stream => {
@@ -166,10 +165,6 @@ export default {
 					stream: stream
 				})
 			}
-			this.$refs.video.srcObject = stream
-			console.log({
-				streams: this.streams
-			})
 		},
 
 		prepareNewConnection (isOffer, toUserId) {
@@ -258,6 +253,11 @@ export default {
 		},
 
 		sendSdp(sessionDescription, toUserId) {
+			if(sessionDescription.type == 'offer') {
+				alert('offer')
+			} else if (sessionDescription.type == 'answer') {
+				alert('answer')
+			}
 			this.$socket.emit('message', { type: sessionDescription.type, params: { sdp: sessionDescription, fromUserId: this.socketUserId, sendto: toUserId } });
 		},
 
@@ -353,9 +353,9 @@ export default {
 		},
 
 		cleanupAudioElement (toUserId) {
-			let element = this.$refs.video
-			element.pause();
-			element.srcObject = null;
+			// let element = this.$refs.video
+			// element.pause();
+			// element.srcObject = null;
 		},
 
 		addIceCandidate(candidate, fromUserId) {

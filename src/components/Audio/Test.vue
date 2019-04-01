@@ -1,5 +1,7 @@
 <template lang="html">
 	<div class="top-wrapper px-4 pt-4">
+		<audio ref="audio" autoplay playsinline></audio>
+
 		<div class="volume">{{volume}}</div>
 
 		<icon :speaking="volume > 5" :user="user"></icon>
@@ -78,6 +80,11 @@ export default {
 				vm.volume = Math.floor(getByteFrequencyDataAverage());
 				requestAnimationFrame(draw);
 			})();
+
+			if(!this.user.is_me) {
+				this.$refs.audio.srcObject = this.stream
+			}
+
 		},
 	}
 }
