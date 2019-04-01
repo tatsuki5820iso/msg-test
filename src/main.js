@@ -11,10 +11,10 @@ import VueEasel from 'vue-easeljs'
 
 Vue.use(Vuetify)
 
-// Vue.use(new VueSocketIO({
-// 	debug: true,
-// 	connection: 'https://5cee3878.ngrok.io',
-// }))
+Vue.use(new VueSocketIO({
+	debug: true,
+	connection: 'https://3d2ecffb.ngrok.io',
+}))
 
 Vue.use(VueEasel)
 

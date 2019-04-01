@@ -9,7 +9,8 @@
 				<audio-test :stream="localStream" :user="me" v-if="localStream"></audio-test>
 			</div>
 			<div class="mx-2 wrapper-card" v-for="stream_arr in streams">
-				<audio-test :stream="stream_arr.stream" :user="users[stream_arr.socketId]" v-if="localStream && users[stream_arr.socketId]"></audio-test>
+				<audio-test :stream="stream_arr.stream" :user="users.filter(function(ele) { return ele.socketId == stream_arr.socketId })[0]"
+				v-if="stream_arr.stream && users.filter(function(ele) { return ele.socketId == stream_arr.socketId })[0]"></audio-test>
 			</div>
 		</v-layout>
 
