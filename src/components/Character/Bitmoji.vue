@@ -3,7 +3,7 @@
 		<easel-canvas width="100" height="80">
 			<easel-sprite-sheet
 			:images="['/img/heart.svg']"
-			:frames="{width:20,height:50}"
+			:frames="{width:20, height:50}"
 			:animations="{
 				stand: 7,
 				walk: [6, 7],
