@@ -13,7 +13,7 @@ Vue.use(Vuetify)
 
 Vue.use(new VueSocketIO({
 	debug: true,
-	connection: 'https://cf611ef5.ngrok.io',
+	connection: 'https://076acc1a.ngrok.io',
 }))
 
 Vue.use(VueEasel)
